@@ -69,7 +69,7 @@ class WikipediaGrabber:
 
     def search_page(self):
         wiki_url = "https://en.wikipedia.org"
-        search_param = "+".join(self.search_string.split(" "))
+        search_param = "+".join(self.search_string.split(" ") + ["film"])
         url = f"{wiki_url}/w/index.php?search={search_param}&title=Special%3ASearch&go=Go"
         out = requests.get(url)
 
@@ -95,13 +95,20 @@ class WikipediaGrabber:
 
         return first_result_url
 
+
     def movie_page(self, url):
         out = requests.get(url)
         document = fromstring(out.text)
-        expression = GenericTranslator().css_to_xpath('.thumbborder')
-        all_results = document.xpath(expression)
+        expression_thumb = GenericTranslator().css_to_xpath('.thumbborder')
+        all_results = document.xpath(expression_thumb)
+        if not all_results:
+            # Try to get first emage of the page
+            expression_img = GenericTranslator().css_to_xpath('img')
+            all_results = document.xpath(expression_img)
+
         if not all_results:
             raise NotFound(url)
+
         first_result = all_results[0]
         url = first_result.get("src")
         if url.startswith("//"):
